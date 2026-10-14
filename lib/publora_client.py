@@ -257,7 +257,7 @@ class PubloraClient:
             upload_url,
             data=data,
             headers={"Content-Type": content_type},
-            timeout=self.timeout,
+            allow_redirects=False, timeout=self.timeout,
         )
         if r.status_code >= 300:
             raise PubloraError(
@@ -397,7 +397,7 @@ class PubloraClient:
         pass to the publish flow.
         """
         r = self._session.get(
-            self.BASE_URL + "/platform-connections", timeout=self.timeout
+            self.BASE_URL + "/platform-connections", allow_redirects=False, timeout=self.timeout
         )
         data = self._handle(r)
         return data.get("connections", [])
@@ -415,20 +415,20 @@ class PubloraClient:
     @_retry()
     def _post(self, path: str, json_body: dict[str, Any]) -> dict[str, Any]:
         r = self._session.post(
-            self.BASE_URL + path, json=json_body, timeout=self.timeout
+            self.BASE_URL + path, json=json_body, allow_redirects=False, timeout=self.timeout
         )
         return self._handle(r)
 
     @_retry()
     def _put(self, path: str, json_body: dict[str, Any]) -> dict[str, Any]:
         r = self._session.put(
-            self.BASE_URL + path, json=json_body, timeout=self.timeout
+            self.BASE_URL + path, json=json_body, allow_redirects=False, timeout=self.timeout
         )
         return self._handle(r)
 
     @_retry()
     def _delete(self, path: str) -> dict[str, Any]:
-        r = self._session.delete(self.BASE_URL + path, timeout=self.timeout)
+        r = self._session.delete(self.BASE_URL + path, allow_redirects=False, timeout=self.timeout)
         return self._handle(r)
 
     @staticmethod
