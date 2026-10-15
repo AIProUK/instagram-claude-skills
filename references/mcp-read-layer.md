@@ -80,6 +80,8 @@ Input: `{"usernames": ["natgeo"]}`. Drop the `@`. Keep the first row that has a
 
 ### Mapping, profile rows
 
+Flatten to what `_profile` produces:
+
 | Flat field | Comes from | Note |
 |---|---|---|
 | `username` | `username` | |
