@@ -20,7 +20,7 @@ Not for writing a caption (use `ig-caption-writer`) or planning a carousel (use 
 
 ## Setup (optional)
 
-The read layer uses **Apify** (no login, no cookies). Get a free token at `https://console.apify.com/account/integrations` and set `APIFY_TOKEN`. No token? Paste the posts or profile stats you already have and the skill runs the same analysis on them.
+The read layer uses **Apify** (no login, no cookies). Get a free token at `https://console.apify.com/account/integrations` and set `APIFY_TOKEN`. No token? Paste the posts or profile stats you already have and the skill runs the same analysis on them. **On claude.ai**, where a skill cannot hold a token, add Apify's MCP server as a custom connector instead and call `apify--instagram-hashtag-scraper` / `apify--instagram-profile-scraper`, applying the mapping in `../../references/mcp-read-layer.md`. With neither, the skill asks you to paste what you can see.
 
 ## Input
 
@@ -37,7 +37,7 @@ The read layer uses **Apify** (no login, no cookies). Get a free token at `https
 ## Steps
 
 1. **Pull the data.** For a niche: `lib.ApifyClient().fetch_niche_posts(hashtag, max_items=20)`. For a profile: `fetch_profile(username)`. Falls back to pasted data if no token.
-2. **Rank by engagement.** Sort the niche posts by likes + comments. Normalize against the owner's reach where known so a mega-account's average does not crowd out a small account's breakout.
+2. **Rank by engagement.** Sort the niche items by likes + comments, skipping any whose count is `None`: that is a hidden count, not a zero, and ranking it as zero buries a post that may be the best in the set. Normalize against the owner's reach where known so a mega-account's average does not crowd out a small account's breakout.
 3. **Extract the pattern.** For the top posts, name what they share: the hook shape (question, confession, list, data-point), the caption length, image vs carousel vs Reel, the presence of a specific number. That is the repeatable part.
 4. **Read the profile.** From `fetch_profile`, report followers, post count, bio, category, and whether it is a verified business account. Use it to benchmark, not to guess private engagement.
 5. **Benchmark honestly.** Compare handles on the stats Instagram exposes (followers, post count, cadence). Do not imply access to a liker or commenter list for accounts you do not own.
@@ -48,7 +48,7 @@ The read layer uses **Apify** (no login, no cookies). Get a free token at `https
 
 | Method | Returns |
 |---|---|
-| `fetch_niche_posts(hashtag, max_items)` | top posts under a hashtag: caption, likes, comments, owner, type, url |
+| `fetch_niche_posts(hashtag, max_items, kind)` | what is traveling under a hashtag: caption, likes, comments, owner, type, url. `kind` defaults to `"reels"`, the only mode that carries engagement; `"posts"` returns minutes-old feed posts whose like counts are 0 |
 | `fetch_profile(username)` | profile stats: username, followers, following, posts, bio, category, verified, business |
 
 ## Hard rules

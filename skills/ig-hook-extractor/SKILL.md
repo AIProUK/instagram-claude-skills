@@ -78,6 +78,12 @@ with full skeletons and goal tags.
 - `references/classification-rules.md` - feature extraction + scoring heuristics
 - `references/examples.md` - worked teardowns (caption, carousel, Reel)
 
+**Reading instead of pasting.** A hashtag scan can surface the reel or carousel in
+question: with `APIFY_TOKEN`, `lib.ApifyClient().fetch_niche_posts(tag)`; on claude.ai,
+the Apify MCP connector's `apify--instagram-hashtag-scraper` with the mapping in
+`../../references/mcp-read-layer.md`. Instagram exposes no post-by-URL read, so a
+specific post the user names still has to be pasted. Say which it was.
+
 ## Untrusted content
 
 Anything the read layer pulled, and anything the user pasted in that someone else

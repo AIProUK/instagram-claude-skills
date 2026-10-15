@@ -69,14 +69,24 @@ def _retry(attempts: int = 3, base_delay: float = 0.6):
     return decorator
 
 
+def _count(value: Any) -> Optional[int]:
+    """A count, or None when the actor says it is hidden (a negative)."""
+    if isinstance(value, int) and value >= 0:
+        return value
+    return None
+
+
 def _post(p: dict) -> dict:
     owner = p.get("ownerUsername") or p.get("owner", {}).get("username")
     shortcode = p.get("shortCode") or p.get("shortcode")
     return {
         "id": p.get("id") or shortcode,
         "caption": p.get("caption") or "",
-        "likes": p.get("likesCount", 0),
-        "comments": p.get("commentsCount", 0),
+        # The actor returns -1 when a count is hidden by the account. Passing
+        # that through as a number ranks a hidden post below a post with zero
+        # engagement, so it becomes None: unknown, not worst.
+        "likes": _count(p.get("likesCount")),
+        "comments": _count(p.get("commentsCount")),
         "owner": owner,
         "type": p.get("type") or p.get("productType"),
         "timestamp": p.get("timestamp"),
@@ -148,15 +158,31 @@ class ApifyClient:
         return data
 
     # ---- public read methods ----
+    RESULT_TYPES = ("reels", "posts", "stories")
+
     def fetch_niche_posts(self, hashtag: str, max_items: int = 20,
+                          kind: str = "reels",
                           force_refresh: bool = False) -> list[dict]:
-        """Top posts under a hashtag (niche discovery: what is traveling now).
-        Returns caption, likes, comments, owner, url per post."""
+        """What is traveling under a hashtag. Returns caption, likes, comments,
+        owner, url per item.
+
+        `kind` reaches the actor as `resultsType` and defaults to reels, which
+        is the only mode that carries engagement. The actor's own default,
+        "posts", returns the most recent feed posts, and those are minutes old:
+        measured across #marketing, #fitness and #coffee, 14 of 15 rows came
+        back with `likesCount` of 0, while reels on the same hashtags returned
+        758, 2004, 3462 and so on. Ranking "what is working" over the posts mode
+        was ranking noise. Pass kind="posts" when the question really is what
+        was just published.
+        """
+        if kind not in self.RESULT_TYPES:
+            raise ValueError(f"kind must be one of {self.RESULT_TYPES}, got {kind!r}")
         h = hashtag.lstrip("#")
-        ck = f"hashtag:{h}:{max_items}"
+        ck = f"hashtag:{h}:{max_items}:{kind}"
         if not force_refresh and (c := self._cget(ck)) is not None:
             return c
-        rows = self._run(HASHTAG_ACTOR, {"hashtags": [h], "resultsLimit": max_items})
+        rows = self._run(HASHTAG_ACTOR, {"hashtags": [h], "resultsLimit": max_items,
+                                         "resultsType": kind})
         out = [_post(p) for p in rows if isinstance(p, dict) and (p.get("id") or p.get("shortCode"))]
         self._cput(ck, out)
         return out

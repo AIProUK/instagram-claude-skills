@@ -323,12 +323,36 @@ post. So the flow is always: create a draft, upload the media, then set the
 schedule. `publish_media_post` enforces that order and cleans up the draft if any
 step fails.
 
-## Why there is no read layer by default
+## What the read layer can and cannot do
 
-Instagram has no cheap, documented post-read actor wired into this bundle, so
-`ig-hook-extractor` asks the user to paste the caption (and slide or Reel hook).
-If you add an Apify Instagram actor later, gate it behind `APIFY_TOKEN` and keep
-the paste fallback.
+`ig-audience-insights` reads real Instagram data through two Apify actors, no
+login and no cookies: what is traveling under a hashtag
+(`apify/instagram-hashtag-scraper`) and a profile's public stats
+(`apify/instagram-profile-scraper`). Niche reads ask for **reels**, because the
+actor's own default returns the most recent feed posts and those come back with
+like counts of 0: measured across #marketing, #fitness and #coffee, 14 of 15
+rows had zero engagement, while reels on the same hashtags returned 758, 2004,
+3462.
+
+**Two ways in.** With a shell, `APIFY_TOKEN=apify_api_...` in your `.env`. On
+claude.ai, where a skill has no environment to hold a token, add Apify's MCP
+server as a custom connector:
+
+```
+https://mcp.apify.com?actors=apify/instagram-hashtag-scraper,apify/instagram-profile-scraper
+```
+
+Sign in with OAuth on first use, no key on disk. **Keep the `?actors=` filter**:
+the bare `https://mcp.apify.com` also hands the agent `search-actors` and
+`call-actor`, which run anything in the Apify Store at whatever that actor
+charges. Details and the field mapping:
+[`references/mcp-read-layer.md`](references/mcp-read-layer.md).
+
+**What it cannot do**, on either path, because Instagram gates it: there is no
+post-by-URL read, so `ig-hook-extractor` still asks you to paste a specific
+caption; the list of who liked a post is not available; and commenter identities
+on someone else's post are capped and cookie-walled. A skill offering engager
+segmentation here would be inventing it.
 
 </details>
 
